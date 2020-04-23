@@ -4,7 +4,7 @@ package com.aruistar.cordova.baidumap;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
-
+import android.support.v4.app.ActivityCompat;
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
@@ -18,7 +18,9 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import java.util.ArrayList;
 
 /**
@@ -134,10 +136,13 @@ public class BaiduMapLocation extends CordovaPlugin {
             return;
         for (int r : grantResults) {
             if (r == PackageManager.PERMISSION_DENIED) {
-                JSONObject json = new JSONObject();
-                json.put("describe", "定位失败");
                 LOG.e(LOG_TAG, "权限请求被拒绝");
-                cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, json));
+                // 复选了不在询问
+                if (!ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), String.valueOf(r))){
+                    cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "复选了不在询问 权限请求被拒绝"));
+                } else {
+                    cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "权限请求被拒绝"));
+                }
                 return;
             }
         }
@@ -155,8 +160,17 @@ public class BaiduMapLocation extends CordovaPlugin {
             if (!needsToAlertForRuntimePermission()) {
                 performGetLocation();
             } else {
-                requestPermission();
-                // 会在onRequestPermissionResult时performGetLocation
+                SharedPreferences sp = cordova.getContext().getSharedPreferences("Baidu", Context.MODE_PRIVATE);
+                if (sp.getString("request","") == "true") {
+                    cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "show setting"));
+                } else {
+                    SharedPreferences.Editor editor = sp.edit();
+                    editor.putString("request", "true");
+                    editor.commit();
+                    requestPermission();
+                }
+
+                // 会在onRequestPermissionResult时 performGetLocation
             }
             return true;
         }
