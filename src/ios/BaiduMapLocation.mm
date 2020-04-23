@@ -5,7 +5,10 @@
 //
 
 #import "BaiduMapLocation.h"
-
+#import <CoreLocation/CoreLocation.h>
+NSString* kUnknown = @"unknown";
+NSString* kAuthorized = @"authorized";
+NSString* kDenied = @"show setting";//@"denied";
 @implementation BaiduMapLocation
 
 
@@ -23,11 +26,37 @@
 
 - (void)getCurrentPosition:(CDVInvokedUrlCommand*)command
 {
-    _execCommand = command;
-    [_localManager setLocatingWithReGeocode:YES];
-    [_localManager startUpdatingLocation];
+    NSString* location =[self updateLocationPermissions];
+    if ([kDenied isEqualToString:location]) {
+        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:location];
+        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+    } else {
+        _execCommand = command;
+        [_localManager setLocatingWithReGeocode:YES];
+        [_localManager startUpdatingLocation];
+    }
+    
 }
 
+-(NSString*)updateLocationPermissions{
+    NSString* result = kUnknown;
+    if([CLLocationManager significantLocationChangeMonitoringAvailable] == NO){
+
+    } else {
+        CLAuthorizationStatus status = [CLLocationManager authorizationStatus];
+        if(status == kCLAuthorizationStatusAuthorizedWhenInUse){
+            result = kAuthorized;
+        } else if(status == kCLAuthorizationStatusAuthorizedAlways){
+            result = kAuthorized;
+        } else if(status == kCLAuthorizationStatusNotDetermined) {
+        } else if(status == kCLAuthorizationStatusDenied) {
+            result = kDenied;
+       } else if(status == kCLAuthorizationStatusRestricted) {
+            result = kDenied;
+        }
+    }
+    return result;
+}
 - (void)BMKLocationManager:(BMKLocationManager * _Nonnull)manager didUpdateLocation:(BMKLocation * _Nullable)userLocation orError:(NSError * _Nullable)error
 {
     if(_execCommand != nil)
