@@ -21,6 +21,8 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.util.Log;
+
 import java.util.ArrayList;
 
 /**
@@ -134,20 +136,29 @@ public class BaiduMapLocation extends CordovaPlugin {
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
         if (cbCtx == null || requestCode != REQUEST_CODE)
             return;
-        for (int r : grantResults) {
-            if (r == PackageManager.PERMISSION_DENIED) {
-                LOG.e(LOG_TAG, "权限请求被拒绝");
-                // 复选了不在询问
-                if (!ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), String.valueOf(r))){
-                    cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "复选了不在询问 权限请求被拒绝"));
-                } else {
-                    cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "权限请求被拒绝"));
+
+
+        try {
+            for(int i=0;i<grantResults.length;i++){
+                if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                    // 复选了不在询问
+                    LOG.e(LOG_TAG, "权限请求被拒绝");
+                    if (!ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), permissions[i])){
+                        cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "复选了不在询问 权限请求被拒绝"));
+                    } else {
+                        cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "权限请求被拒绝"));
+                    }
+                    return;
                 }
-                return;
             }
+            performGetLocation();
+            
+        } catch (Exception e) {
+            Log.e("ImagePicker:", e.getMessage());
         }
 
-        performGetLocation();
+
+
     }
 
     /**
@@ -161,7 +172,7 @@ public class BaiduMapLocation extends CordovaPlugin {
                 performGetLocation();
             } else {
                 SharedPreferences sp = cordova.getContext().getSharedPreferences("Baidu", Context.MODE_PRIVATE);
-                if (sp.getString("request","") == "true") {
+                if (sp.getString("request","").equals("true") ) {
                     cbCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "show setting"));
                 } else {
                     SharedPreferences.Editor editor = sp.edit();
