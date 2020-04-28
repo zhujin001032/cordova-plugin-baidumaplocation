@@ -26,16 +26,19 @@ NSString* kDenied = @"show setting";//@"denied";
 
 - (void)getCurrentPosition:(CDVInvokedUrlCommand*)command
 {
-    NSString* location =[self updateLocationPermissions];
-    if ([kDenied isEqualToString:location]) {
-        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:location];
-        [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
-    } else {
-        _execCommand = command;
-        [_localManager setLocatingWithReGeocode:YES];
-        [_localManager startUpdatingLocation];
-    }
-    
+    [self.commandDelegate runInBackground:^{
+        NSString* location =[self updateLocationPermissions];
+        NSLog(@"get permission%@",location);
+        if ([kDenied isEqualToString:location]) {
+            CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:location];
+            [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+        } else {
+            NSLog(@"get permission startUpdatingLocation");
+            self->_execCommand = command;
+            [self->_localManager setLocatingWithReGeocode:YES];
+            [self->_localManager startUpdatingLocation];
+        }
+    }];
 }
 
 -(NSString*)updateLocationPermissions{
