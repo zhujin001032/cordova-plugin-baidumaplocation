@@ -22,6 +22,22 @@ NSString* kDenied = @"show setting";//@"denied";
     
     _localManager = [[BMKLocationManager alloc] init];
     _localManager.delegate = self;
+    //设置返回位置的坐标系类型
+   _localManager.coordinateType = BMKLocationCoordinateTypeBMK09LL;
+   //设置距离过滤参数
+   _localManager.distanceFilter = kCLDistanceFilterNone;
+   //设置预期精度参数
+   _localManager.desiredAccuracy = kCLLocationAccuracyBest;
+   //设置应用位置类型
+   _localManager.activityType = CLActivityTypeAutomotiveNavigation;
+   //设置是否自动停止位置更新
+   _localManager.pausesLocationUpdatesAutomatically = NO;
+   //设置是否允许后台定位
+   //    _locationManager.allowsBackgroundLocationUpdates = NO;
+   //设置位置获取超时时间
+   _localManager.locationTimeout = 10;
+   //设置获取地址信息超时时间
+   _localManager.reGeocodeTimeout = 10;
 }
 
 - (void)getCurrentPosition:(CDVInvokedUrlCommand*)command
